@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Any value can be overridden from the command line by appending, after a double dash,
+  e.g. Playwright.BrowserName=firefox Playwright.LaunchOptions.Headless=false
+  Or run headed by setting the HEADED=1 environment variable. See README.md.
+-->
+<RunSettings>
+  <NUnit>
+    <NumberOfTestWorkers>4</NumberOfTestWorkers>
+  </NUnit>
+  <Playwright>
+    <!-- chromium | firefox | webkit -->
+    <BrowserName>chromium</BrowserName>
+    <!-- Timeout (ms) for web-first Expect(...) assertions. -->
+    <ExpectTimeout>10000</ExpectTimeout>
+    <LaunchOptions>
+      <Headless>true</Headless>
+    </LaunchOptions>
+  </Playwright>
+</RunSettings>

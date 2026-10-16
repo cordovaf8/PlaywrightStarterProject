@@ -1,68 +1,48 @@
-﻿using Microsoft.Playwright;
-using PlaywrightStarterProject.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace PlaywrightStarterProject.Pages.Samples.DemoQA;
 
-namespace PlaywrightStarterProject.Pages.Samples.DemoQA
+public class PracticeFormPage(IPage page)
 {
-    public class PracticeFormPage
+    public const string Route = "/automation-practice-form";
+
+    private ILocator Form => page.Locator("#userForm");
+
+    public ILocator FirstNameInput => Form.GetByPlaceholder("First Name");
+    public ILocator LastNameInput => Form.GetByPlaceholder("Last Name");
+    public ILocator EmailInput => Form.GetByPlaceholder("name@example.com");
+    public ILocator MobileNumberInput => Form.GetByPlaceholder("Mobile Number");
+    public ILocator CurrentAddressTextArea => Form.GetByPlaceholder("Current Address");
+    public ILocator PictureUploadInput => Form.Locator("#uploadPicture");
+    public ILocator SubmitButton => Form.GetByRole(AriaRole.Button, new() { Name = "Submit" });
+
+    // DemoQA's radios and checkboxes are visually covered by their labels,
+    // so we assert on the input but click the label text.
+    public ILocator GenderRadio(string gender) => Form.GetByRole(AriaRole.Radio, new() { Name = gender, Exact = true });
+    public Task SelectGenderAsync(string gender) => Form.GetByText(gender, new() { Exact = true }).ClickAsync();
+
+    public ILocator HobbyCheckbox(string hobby) => Form.GetByRole(AriaRole.Checkbox, new() { Name = hobby, Exact = true });
+    public Task CheckHobbyAsync(string hobby) => Form.GetByText(hobby, new() { Exact = true }).ClickAsync();
+
+    // react-select widgets: type to filter, then pick the matching option.
+    public ILocator SubjectsInput => Form.Locator("#subjectsInput");
+    public ILocator SelectedSubjects => Form.Locator(".subjects-auto-complete__multi-value__label");
+
+    public async Task AddSubjectAsync(string subject)
     {
-        private readonly IPage _page;
-
-        internal PracticeFormPage(IPage page)
-        {
-            _page = page;
-        }
-
-        public readonly String Route = "/automation-practice-form";
-
-
-        #region Selectors
-        public ILocator FirstNameInput => _page.GetByTestId($"firstName");
-        public ILocator LastNameInput => _page.GetByTestId($"lastName");
-        public ILocator EmailInput => _page.GetByTestId($"userEmail");
-
-        public ILocator SubjectsContainer => _page.GetByTestId($"subjectsContainer");
-        public ILocator SubjectsAutoCompleteMenu => _page.GetByTestId($"//div[contains(@class, 'subjects-auto-complete__control--is-focused')]");
-        public ILocator MaleRadioClickWrapper => _page.Locator($"//label[@for='gender-radio-1']");
-        public ILocator MaleRadioInput => _page.GetByTestId($"gender-radio-1");
-        public ILocator FemaleRadioClickWrapper => _page.Locator($"//label[@for='gender-radio-2']");
-        public ILocator FemaleRadioInput => _page.GetByTestId($"gender-radio-2");
-        public ILocator OtherRadioClickWrapper => _page.Locator($"//label[@for='gender-radio-3']");
-        public ILocator OtherRadioInput => _page.GetByTestId($"gender-radio-3");
-
-
-        public ILocator MobileNumberInput => _page.GetByTestId($"userNumber");
-
-
-        //example of input being covered ILocator a label -- had to get creative and click the label
-        public ILocator SportsHobILocatorClickWrapper => _page.Locator($"//label[@for='hobbies-checkbox-1']");
-        public ILocator SportsHobILocatorRadioInput => _page.GetByTestId($"hobbies-checkbox-1");
-        public ILocator ReadingHobILocatorClickWrapper => _page.Locator($"//label[@for='hobbies-checkbox-2']");
-        public ILocator ReadingHobILocatorRadioInput => _page.GetByTestId($"hobbies-checkbox-2");
-        public ILocator MusicHobILocatorClickWrapper => _page.Locator($"//label[@for='hobbies-checkbox-3']");
-        public ILocator MusicHobILocatorRadioInput => _page.GetByTestId($"hobbies-checkbox-3");
-
-
-        public ILocator PictureUploadInput => _page.GetByTestId($"uploadPicture");
-
-        public ILocator CurrentAddressTextArea => _page.Locator($"//textarea[@id='currentAddress']");
-
-        public ILocator StateDropDownMenuButton => _page.GetByTestId($"state");
-
-        private String StateDropDownMenuOptionsXpathILocatorIndex = $"(//div[@id='state']//div[contains(@class, '-menu')]/div//div)[<index>]";
-        public ILocator GetStateDropDownMenuOptionILocatorIndex(int index = 1) => _page.Locator(StateDropDownMenuOptionsXpathILocatorIndex.Replace("<index>", index.ToString()));
-
-        public ILocator CityDropDownMenuButton => _page.GetByTestId($"city");
-
-        private String CityDropDownMenuOptionsXpathILocatorIndex = $"(//div[@id='city']//div[contains(@class, '-menu')]/div//div)[<index>]";
-        public ILocator GetCityDropDownMenuOptionsILocatorIndex(int index = 1) => _page.Locator(CityDropDownMenuOptionsXpathILocatorIndex.Replace("<index>", index.ToString()));
-
-        public ILocator SubmitButton => _page.GetByTestId($"submit");
-
-        #endregion
+        await SubjectsInput.PressSequentiallyAsync(subject);
+        await page.GetByRole(AriaRole.Option, new() { Name = subject, Exact = true }).ClickAsync();
     }
+
+    public ILocator StateDropDown => Form.Locator("#state");
+    public ILocator CityDropDown => Form.Locator("#city");
+
+    public Task SelectStateAsync(string state) => SelectFromDropDownAsync(StateDropDown, state);
+    public Task SelectCityAsync(string city) => SelectFromDropDownAsync(CityDropDown, city);
+
+    private async Task SelectFromDropDownAsync(ILocator dropDown, string option)
+    {
+        await dropDown.ClickAsync();
+        await page.GetByRole(AriaRole.Option, new() { Name = option, Exact = true }).ClickAsync();
+    }
+
+    public Task GotoAsync() => page.GotoAsync(Route);
 }

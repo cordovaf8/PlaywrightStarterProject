@@ -1,66 +1,55 @@
-﻿using FluentAssertions;
-using PlaywrightStarterProject.Framework;
-using PlaywrightStarterProject.Pages;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace PlaywrightStarterProject.Tests.Samples.DemoQA;
 
-namespace PlaywrightStarterProject.Tests.Samples.DemoQA
+/// <summary>
+/// Requires a DemoQA account. Set DEMOQA_USERNAME and DEMOQA_PASSWORD
+/// (environment variables or CI secrets) to run these tests; otherwise they are skipped.
+/// </summary>
+public class BookStoreTests : BaseTest
 {
-    public class BookStoreTests : BaseTest
+    private string? _addedBookTitle;
+
+    [SetUp]
+    public async Task Init()
     {
-        [SetUp]
-        public async Task Init()
+        var userName = Environment.GetEnvironmentVariable("DEMOQA_USERNAME");
+        var password = Environment.GetEnvironmentVariable("DEMOQA_PASSWORD");
+        if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(password))
         {
-            try
-            {
-                var url = Pages.HomePage.Url + Pages.BookStorePage.Route;
-                await BasePage.GotoAsync(Pages.HomePage.Url + Pages.BookStorePage.Route);
-
-                if (await Pages.BookStorePage.LogoutButton.CountAsync() == 0)
-                {
-                    await Pages.BookStorePage.LoginButton.ClickAsync();
-                    await Pages.LoginPage.Login();
-                }
-            }
-            catch (Exception ex)
-            {
-
-                throw;
-            }
-
+            Assert.Ignore("Set DEMOQA_USERNAME and DEMOQA_PASSWORD to run Book Store tests.");
         }
 
-        [Test]
-        public async Task AddBookToCollection()
+        await Pages.LoginPage.GotoAsync();
+        await Pages.LoginPage.LoginAsync(userName!, password!);
+        await Pages.BookStorePage.GotoAsync();
+    }
+
+    [Test]
+    public async Task AddBookToCollection()
+    {
+        await Pages.BookStorePage.BookLinks.First.ClickAsync();
+        var bookTitle = await Pages.BookStorePage.BookTitle.InnerTextAsync();
+
+        // DemoQA confirms with a native alert; accept it explicitly.
+        Page.Dialog += async (_, dialog) => await dialog.AcceptAsync();
+        await Pages.BookStorePage.AddToCollectionButton.ClickAsync();
+        _addedBookTitle = bookTitle;
+
+        await Pages.ProfilePage.GotoAsync();
+        await Pages.ProfilePage.SearchBoxInput.FillAsync(bookTitle);
+
+        await Expect(Pages.ProfilePage.BookLink(bookTitle)).ToBeVisibleAsync();
+    }
+
+    [TearDown]
+    public async Task Cleanup()
+    {
+        if (_addedBookTitle is null)
         {
-            await Pages.BookStorePage.GetBookLinkByIndex().ClickAsync();
-            var bookTitle = await Pages.ProfilePage.TitleTextLabel.TextContentAsync();
-
-            //await BasePage.EvaluateAsync(() => alert("alert"));
-            await Pages.BookStorePage.AddToCollectionButton.ClickAsync(new() { Force = true});
-
-            //Interaction.JavaScriptClick(Pages.BookStorePage.AddToCollectionButton);
-            //Pages.Shared.AcceptBrowserAlert();
-
-            await BasePage.GotoAsync(Pages.HomePage.Url + Pages.ProfilePage.Route);
-
-            await Pages.ProfilePage.SearchBoxInput.FillAsync(bookTitle);
-            await Pages.ProfilePage.SearchBoxInput.PressAsync("Tab");
-
-            var bookInGridTitle = await Pages.ProfilePage.GetRecordLinkILocatorTitle(bookTitle).TextContentAsync();
-
-            bookInGridTitle.Should().Be(bookTitle);
+            return;
         }
 
-
-        [TearDown]
-        public async Task Cleanup()
-        {
-            await Pages.ProfilePage.GetDeleteButtonForRow(1).ClickAsync();
-            await Pages.ProfilePage.DeleteBookModalOkButton.ClickAsync();
-        }
+        await Pages.ProfilePage.GotoAsync();
+        await Pages.ProfilePage.DeleteBookAsync(_addedBookTitle);
+        _addedBookTitle = null;
     }
 }

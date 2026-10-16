@@ -1,23 +1,11 @@
-﻿using Microsoft.Playwright;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace PlaywrightStarterProject.Pages.Samples.DemoQA;
 
-namespace PlaywrightStarterProject.Pages.Samples.DemoQA
+public class LinksPage(IPage page)
 {
-    public class LinksPage
-    {
-        private readonly IPage _page;
+    public const string Route = "/links";
 
-        internal LinksPage(IPage page)
-        {
-            _page = page;
-        }
+    /// <summary>The static "Home" link, which opens the home page in a new tab.</summary>
+    public ILocator HomeInNewTabLink => page.GetByRole(AriaRole.Link, new() { Name = "Home", Exact = true });
 
-        public readonly String Route = "/links";
-
-        public ILocator HomeInNewTabLink => _page.GetByTestId($"simpleLink");
-    }
+    public Task GotoAsync() => page.GotoAsync(Route);
 }

@@ -1,40 +1,22 @@
-﻿using Microsoft.Playwright;
-using PlaywrightStarterProject.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace PlaywrightStarterProject.Pages.Samples.DemoQA;
 
-namespace PlaywrightStarterProject.Pages.Samples.DemoQA
+public class LoginPage(IPage page)
 {
-    public class LoginPage
+    public const string Route = "/login";
+
+    public ILocator UserNameInput => page.GetByPlaceholder("UserName");
+    public ILocator PasswordInput => page.GetByPlaceholder("Password");
+    public ILocator LoginButton => page.GetByRole(AriaRole.Button, new() { Name = "Login" });
+    public ILocator LogoutButton => page.GetByRole(AriaRole.Button, new() { Name = "Log out" });
+
+    public async Task LoginAsync(string userName, string password)
     {
-        private readonly IPage _page;
+        await UserNameInput.FillAsync(userName);
+        await PasswordInput.FillAsync(password);
+        await LoginButton.ClickAsync();
 
-        internal LoginPage(IPage page)
-        {
-            _page = page;
-        }
-
-        public readonly String Route = "/login";
-
-        private readonly String UserName = "Test@888";
-        private readonly String Password = "Test@888";
-
-        public ILocator UserNameInput => _page.GetByTestId($"userName");
-        public ILocator PasswordInput => _page.GetByTestId($"password");
-        public ILocator LoginButton => _page.GetByTestId($"login");
-        public ILocator LogoutButton => _page.Locator($"//button[text()='Log out']");
-
-
-        public async Task Login()
-        {
-            await UserNameInput.FillAsync(UserName);
-            await PasswordInput.FillAsync(Password);
-            await LoginButton.ClickAsync();
-
-            await LogoutButton.WaitForAsync(new() { State = WaitForSelectorState.Visible});
-        }
+        await LogoutButton.WaitForAsync();
     }
+
+    public Task GotoAsync() => page.GotoAsync(Route);
 }

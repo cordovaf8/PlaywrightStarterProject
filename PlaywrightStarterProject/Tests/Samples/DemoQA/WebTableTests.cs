@@ -1,25 +1,34 @@
-﻿using FluentAssertions;
-using PlaywrightStarterProject.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static PlaywrightStarterProject.Pages.Samples.DemoQA.WebTablePage;
 
-namespace PlaywrightStarterProject.Tests.Samples.DemoQA
+namespace PlaywrightStarterProject.Tests.Samples.DemoQA;
+
+public class WebTableTests : BaseTest
 {
-    public class WebTableTests : BaseTest
+    [SetUp]
+    public Task Init() => Pages.WebTablePage.GotoAsync();
+
+    [Test]
+    public async Task TableDefaultUsersArePresent()
     {
-        [Test]
-        public async Task TableDefaultUsersArePresent()
-        {
-            var DefaultFirstNameRecords = new List<string>() { "Cierra", "Alden", "Kierra" };
+        await Expect(Pages.WebTablePage.CellsInColumn(Column.FirstName))
+            .ToContainTextAsync(["Cierra", "Alden", "Kierra"]);
+    }
 
-            await BasePage.GotoAsync(Pages.HomePage.Url + Pages.WebTablePage.Route);
+    [Test]
+    public async Task SearchFiltersRows()
+    {
+        await Pages.WebTablePage.SearchBoxInput.FillAsync("Cierra");
 
-            var cellValues = await Pages.WebTablePage.GetAllCellValuesInColumnAsync(Pages.WebTablePage.FirstNameColumn);
+        await Expect(Pages.WebTablePage.Rows).ToHaveCountAsync(1);
+        await Expect(Pages.WebTablePage.Row("Cierra")).ToContainTextAsync("cierra@example.com");
+    }
 
-            DefaultFirstNameRecords.Should().Contain(cellValues);
-        }
+    [Test]
+    public async Task CanDeleteRow()
+    {
+        await Pages.WebTablePage.DeleteRowAsync("Alden");
+
+        await Expect(Pages.WebTablePage.Row("Alden")).ToHaveCountAsync(0);
+        await Expect(Pages.WebTablePage.Row("Cierra")).ToBeVisibleAsync();
     }
 }

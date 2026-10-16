@@ -1,25 +1,14 @@
-﻿
-using Microsoft.Playwright;
-using PlaywrightStarterProject.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace PlaywrightStarterProject.Pages.Samples.DemoQA;
 
-namespace PlaywrightStarterProject.Pages.Samples.DemoQA
+public class HomePage(IPage page)
 {
-    public class HomePage
-    {
-        private readonly IPage _page;
+    public const string Route = "/";
 
-        internal HomePage(IPage page)
-        {
-            _page = page;
-        }
+    public ILocator CategoryCards => page.Locator(".category-cards");
 
-        public readonly String Url = "https://demoqa.com";
+    public ILocator Card(string name) => CategoryCards.GetByRole(AriaRole.Link, new() { Name = name, Exact = true });
 
-        public ILocator FormsCard => _page.Locator($"//h5[contains(text(), 'Forms')]/ancestor::div[contains(@class, 'card ')]");
-    }
+    public ILocator FormsCard => Card("Forms");
+
+    public Task GotoAsync() => page.GotoAsync(Route);
 }

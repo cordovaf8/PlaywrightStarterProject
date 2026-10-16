@@ -1,36 +1,44 @@
-﻿using FluentAssertions;
-using PlaywrightStarterProject.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using PlaywrightStarterProject.Pages.Samples.DemoQA;
 
-namespace PlaywrightStarterProject.Tests.Samples.DemoQA
+namespace PlaywrightStarterProject.Tests.Samples.DemoQA;
+
+public class HomePageTests : BaseTest
 {
-    public class HomePageTests : BaseTest
+    [SetUp]
+    public Task Init() => Pages.HomePage.GotoAsync();
+
+    [Test]
+    public async Task CanNavigate()
     {
-        [Test]
-        public async Task CanNavigate()
-        {
-            await BasePage.GotoAsync(Pages.HomePage.Url);
+        await Expect(Page).ToHaveURLAsync("https://demoqa.com/");
+        await Expect(Page).ToHaveTitleAsync("demosite");
+    }
 
-            await BasePage.WaitForURLAsync(url => url.Contains(Pages.HomePage.Url));
+    [Test]
+    public async Task ShowsAllCategoryCards()
+    {
+        // Aria snapshots assert on the accessible structure of the page in one go.
+        await Expect(Pages.HomePage.CategoryCards).ToMatchAriaSnapshotAsync("""
+            - link "Elements":
+              - /url: /elements
+            - link "Forms":
+              - /url: /forms
+            - link "Alerts, Frame & Windows":
+              - /url: /alertsWindows
+            - link "Widgets":
+              - /url: /widgets
+            - link "Interactions":
+              - /url: /interaction
+            - link "Book Store Application":
+              - /url: /books
+            """);
+    }
 
-            BasePage.Url.Should().Contain(Pages.HomePage.Url);
-        }
+    [Test]
+    public async Task CanNavigateToFormsPage()
+    {
+        await Pages.HomePage.FormsCard.ClickAsync();
 
-        [Test]
-        public async Task CanNavigateToFormsPage()
-        {
-            await BasePage.GotoAsync(Pages.HomePage.Url);
-
-            await Pages.HomePage.FormsCard.ClickAsync();
-
-            await BasePage.WaitForURLAsync(url => url.Contains(Pages.FormsPage.Route));
-
-            BasePage.Url.Should().Contain(Pages.FormsPage.Route);
-        }
+        await Expect(Page).ToHaveURLAsync(new Regex($"{FormsPage.Route}$"));
     }
 }

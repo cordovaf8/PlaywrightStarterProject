@@ -1,29 +1,13 @@
-﻿using Microsoft.Playwright;
-using PlaywrightStarterProject.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace PlaywrightStarterProject.Pages.Samples.DemoQA;
 
-namespace PlaywrightStarterProject.Pages.Samples.DemoQA
+public class IFramePage(IPage page)
 {
-    public class IFramePage
-    {
-        private readonly IPage _page;
+    public const string Route = "/frames";
 
-        internal IFramePage(IPage page)
-        {
-            _page = page;
-        }
+    public IFrameLocator Frame1 => page.Locator("#frame1").ContentFrame;
+    public IFrameLocator Frame2 => page.Locator("#frame2").ContentFrame;
 
-        public readonly String Route = "/frames";
+    public static ILocator Heading(IFrameLocator frame) => frame.GetByRole(AriaRole.Heading);
 
-        public IFrameLocator IFrame1 => _page.FrameLocator($"//div[@id='frame1Wrapper']//iframe");
-        public ILocator IFrameHeader => _page.Locator("//h1");
-
-        public IFrameLocator IFrame2 => _page.FrameLocator($"//div[@id='frame2Wrapper']//iframe");
-        public ILocator IFrameSamplePageTextContent => _page.Locator($"//h1[text()='This is a sample page']");
-        public ILocator IFrameByIndex(int index) => _page.Locator($"//iframe[{index}]");
-    }
+    public Task GotoAsync() => page.GotoAsync(Route);
 }

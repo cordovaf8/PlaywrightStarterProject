@@ -1,68 +1,44 @@
-﻿using FluentAssertions;
-using NUnit.Framework;
-using PlaywrightStarterProject.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace PlaywrightStarterProject.Tests.Samples.DemoQA;
 
-namespace PlaywrightStarterProject.Tests.Samples.DemoQA
+public class PracticeFormPageTests : BaseTest
 {
-    public class PracticeFormPageTests : BaseTest
+    [SetUp]
+    public Task Init() => Pages.PracticeFormPage.GotoAsync();
+
+    [Test]
+    public async Task FillOutForm()
     {
-        [SetUp]
-        public async Task Init()
-        {
-            await BasePage.GotoAsync(Pages.HomePage.Url);
-           
-        }
+        var form = Pages.PracticeFormPage;
+        var uploadFile = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "Test.txt");
 
-        [Test]
-        public async Task FillOutForm()
-        {
-            await Pages.HomePage.FormsCard.ClickAsync();
+        await form.FirstNameInput.FillAsync("First");
+        await form.LastNameInput.FillAsync("Last");
+        await form.EmailInput.FillAsync("test@test.com");
+        await form.SelectGenderAsync("Male");
+        await form.MobileNumberInput.FillAsync("1234343123");
+        await form.AddSubjectAsync("Maths");
+        await form.CheckHobbyAsync("Sports");
+        await form.CheckHobbyAsync("Reading");
+        await form.CheckHobbyAsync("Music");
+        await form.PictureUploadInput.SetInputFilesAsync(uploadFile);
+        await form.CurrentAddressTextArea.FillAsync("TextArea");
+        await form.SelectStateAsync("NCR");
+        await form.SelectCityAsync("Delhi");
 
-            await Pages.FormsPage.PracticeFormsLink.ClickAsync();
-
-            await Pages.PracticeFormPage.FirstNameInput.FillAsync("First");
-            await Pages.PracticeFormPage.LastNameInput.FillAsync("Last");
-            await Pages.PracticeFormPage.EmailInput.FillAsync("test@test.com");
-            await Pages.PracticeFormPage.MaleRadioClickWrapper.ClickAsync();
-
-            await Pages.PracticeFormPage.MobileNumberInput.FillAsync("1234343123");
-
-            await Pages.PracticeFormPage.SubjectsContainer.ClickAsync();
-            await BasePage.Keyboard.PressAsync("A");
-            await Pages.PracticeFormPage.SubjectsAutoCompleteMenu.IsVisibleAsync();
-            await BasePage.Keyboard.PressAsync("ArrowDown");
-            await BasePage.Keyboard.PressAsync("Enter");
-
-
-            await Pages.PracticeFormPage.SportsHobILocatorClickWrapper.ClickAsync();
-            await Pages.PracticeFormPage.ReadingHobILocatorClickWrapper.ClickAsync();
-            await Pages.PracticeFormPage.MusicHobILocatorClickWrapper.ClickAsync();
-
-            var testItemDir = Directory.GetCurrentDirectory() + "\\Tests\\Samples\\DemoQA\\Test.txt";
-            await Pages.PracticeFormPage.PictureUploadInput.SetInputFilesAsync(testItemDir);
-            await Pages.PracticeFormPage.CurrentAddressTextArea.FillAsync("TextArea");
-
-            //Asserts 
-            var test = (await Pages.PracticeFormPage.FirstNameInput.InputValueAsync());
-
-            (await Pages.PracticeFormPage.FirstNameInput.InputValueAsync()).Should().Be("First");
-            (await Pages.PracticeFormPage.LastNameInput.InputValueAsync()).Should().Be("Last");
-            (await Pages.PracticeFormPage.EmailInput.InputValueAsync()).Should().Be("test@test.com");
-            (await Pages.PracticeFormPage.MaleRadioInput.IsCheckedAsync()).Should().BeTrue();
-            (await Pages.PracticeFormPage.FemaleRadioInput.IsCheckedAsync()).Should().BeFalse();
-            (await Pages.PracticeFormPage.OtherRadioInput.IsCheckedAsync()).Should().BeFalse();
-            (await Pages.PracticeFormPage.MobileNumberInput.InputValueAsync()).Should().Be("1234343123");
-            (await Pages.PracticeFormPage.SportsHobILocatorRadioInput.IsCheckedAsync()).Should().BeTrue();
-            (await Pages.PracticeFormPage.ReadingHobILocatorRadioInput.IsCheckedAsync()).Should().BeTrue();
-            (await Pages.PracticeFormPage.MusicHobILocatorRadioInput.IsCheckedAsync()).Should().BeTrue();
-            (await Pages.PracticeFormPage.MusicHobILocatorRadioInput.IsVisibleAsync()).Should().BeTrue();
-            (await Pages.PracticeFormPage.CurrentAddressTextArea.InputValueAsync()).Should().Be("TextArea");
-            (await Pages.PracticeFormPage.PictureUploadInput.InputValueAsync()).Contains("Test.txt").Should().BeTrue();
-        }
+        await Expect(form.FirstNameInput).ToHaveValueAsync("First");
+        await Expect(form.LastNameInput).ToHaveValueAsync("Last");
+        await Expect(form.EmailInput).ToHaveValueAsync("test@test.com");
+        await Expect(form.GenderRadio("Male")).ToBeCheckedAsync();
+        await Expect(form.GenderRadio("Female")).Not.ToBeCheckedAsync();
+        await Expect(form.GenderRadio("Other")).Not.ToBeCheckedAsync();
+        await Expect(form.MobileNumberInput).ToHaveValueAsync("1234343123");
+        await Expect(form.SelectedSubjects).ToHaveTextAsync(["Maths"]);
+        await Expect(form.HobbyCheckbox("Sports")).ToBeCheckedAsync();
+        await Expect(form.HobbyCheckbox("Reading")).ToBeCheckedAsync();
+        await Expect(form.HobbyCheckbox("Music")).ToBeCheckedAsync();
+        await Expect(form.PictureUploadInput).ToHaveValueAsync(new Regex(@"Test\.txt$"));
+        await Expect(form.CurrentAddressTextArea).ToHaveValueAsync("TextArea");
+        await Expect(form.StateDropDown).ToContainTextAsync("NCR");
+        await Expect(form.CityDropDown).ToContainTextAsync("Delhi");
     }
 }

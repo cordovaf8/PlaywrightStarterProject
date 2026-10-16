@@ -1,0 +1,41 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        run: dotnet build PlaywrightStarterProject.slnx
+
+      - name: Install Playwright browsers
+        run: pwsh PlaywrightStarterProject/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Run tests
+        run: dotnet test PlaywrightStarterProject.slnx --no-build --logger trx --results-directory TestResults
+        env:
+          DEMOQA_USERNAME: ${{ secrets.DEMOQA_USERNAME }}
+          DEMOQA_PASSWORD: ${{ secrets.DEMOQA_PASSWORD }}
+
+      - name: Upload traces and results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: |
+            TestResults/
+            PlaywrightStarterProject/bin/Debug/net10.0/playwright-traces/
+          if-no-files-found: ignore
+          retention-days: 14

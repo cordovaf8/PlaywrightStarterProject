@@ -1,42 +1,21 @@
-﻿using Microsoft.Playwright;
-using PlaywrightStarterProject.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+namespace PlaywrightStarterProject.Pages.Samples.DemoQA;
 
-namespace PlaywrightStarterProject.Pages.Samples.DemoQA
+public class ProfilePage(IPage page)
 {
-    public class ProfilePage
+    public const string Route = "/profile";
+
+    public ILocator SearchBoxInput => page.GetByPlaceholder("Type to search");
+
+    public ILocator BookRow(string title) => page.GetByRole(AriaRole.Table).Locator("tbody tr").Filter(new() { HasText = title });
+    public ILocator BookLink(string title) => BookRow(title).GetByRole(AriaRole.Link, new() { Name = title });
+
+    public ILocator DeleteBookModalOkButton => page.GetByRole(AriaRole.Button, new() { Name = "OK", Exact = true });
+
+    public async Task DeleteBookAsync(string title)
     {
-        private readonly IPage _page;
-
-        internal ProfilePage(IPage page)
-        {
-            _page = page;
-        }
-
-        public readonly String Route = "/profile";
-
-        public ILocator GetRecordLinkILocatorTitle(string title) => _page.Locator($"//div[@class='rt-tbody']//a[contains(text(),'{title}')]");
-
-        public ILocator TitleTextLabel => _page.Locator($"//div[@id='title-wrapper']//label[@id='userName-value']");
-        public ILocator SearchBoxInput => _page.GetByTestId($"searchBox");
-
-        public ILocator DeleteBookModalOkButton => _page.GetByTestId($"closeSmallModal-ok");
-        public ILocator DeleteBookModalCancelButton => _page.GetByTestId($"closeSmallModal-cancel");
-
-
-        public ILocator GetCellILocatorRowAndColumn(int row, int column)
-        {
-            return _page.Locator($"(//div[@class='rt-tbody']//div[@role='row'])[{row}]/div[@role='gridcell'][{column}]");
-        }
-
-        public ILocator GetDeleteButtonForRow(int row)
-        {
-            return _page.Locator($"(//div[@class='rt-tbody']//div[@role='row'])[{row}]//span[@title='Delete']");
-        }
-
+        await BookRow(title).GetByTitle("Delete").ClickAsync();
+        await DeleteBookModalOkButton.ClickAsync();
     }
+
+    public Task GotoAsync() => page.GotoAsync(Route);
 }

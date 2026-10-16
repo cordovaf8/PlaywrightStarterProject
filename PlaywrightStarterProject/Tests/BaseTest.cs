@@ -1,64 +1,67 @@
-﻿using PlaywrightStarterProject.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using PlaywrightStarterProject.Pages;
-using Microsoft.Playwright;
+using NUnit.Framework.Interfaces;
 using PlaywrightStarterProject.Pages.Samples.DemoQA;
-using System.Net;
-using Polly;
 
-namespace PlaywrightStarterProject.Tests
+namespace PlaywrightStarterProject.Tests;
+
+/// <summary>
+/// Base class for all UI tests. <see cref="PageTest"/> gives every test its own isolated
+/// browser context and page, configured through <c>.runsettings</c>.
+/// </summary>
+[Parallelizable(ParallelScope.Self)]
+public abstract class BaseTest : PageTest
 {
-    public class BaseTest
+    // DemoQA is ad-heavy; blocking these keeps tests fast and stops overlays from stealing clicks.
+    private static readonly Regex AdAndTrackingHosts = new(
+        @"^https?://([^/]+\.)?(googlesyndication\.com|doubleclick\.net|googletagservices\.com|googletagmanager\.com|google-analytics\.com|adservice\.google\.com|ad\.plus|amazon-adsystem\.com|pubmatic\.com|criteo\.(com|net)|rubiconproject\.com|taboola\.com|outbrain\.com)/",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static string TraceDirectory =>
+        Path.Combine(TestContext.CurrentContext.WorkDirectory, "playwright-traces");
+
+    protected DemoQaPages Pages { get; private set; } = null!;
+
+    public override BrowserNewContextOptions ContextOptions() => new()
     {
-        public WaitHelper WaitHelper { get; set; }
-        public TestUtilities TestUtilities { get; set; }
-        public Dictionary<String, String> Configuration { get; set; }
-        public PlaywrightStarterProject.Pages.Pages Pages { get; set; }
-        protected IBrowserContext Browser { get; private set; } = null!;
-        protected IPage BasePage { get; set; }
+        BaseURL = "https://demoqa.com",
+        ViewportSize = new() { Width = 1920, Height = 1080 },
+    };
 
+    [SetUp]
+    public async Task BaseSetUp()
+    {
+        await Context.RouteAsync(AdAndTrackingHosts, route => route.AbortAsync());
 
-        public BaseTest()
+        await Context.Tracing.StartAsync(new()
         {
-            
+            Title = TestContext.CurrentContext.Test.FullName,
+            Screenshots = true,
+            Snapshots = true,
+            Sources = true,
+        });
+
+        Pages = new DemoQaPages(Page);
+    }
+
+    [TearDown]
+    public async Task BaseTearDown()
+    {
+        // Only keep traces for failures. Open them with: pwsh bin/Debug/net10.0/playwright.ps1 show-trace <file>
+        var outcome = TestContext.CurrentContext.Result.Outcome.Status;
+        var failed = outcome is TestStatus.Failed;
+
+        string? tracePath = null;
+        if (failed)
+        {
+            Directory.CreateDirectory(TraceDirectory);
+            var fileName = string.Concat(TestContext.CurrentContext.Test.FullName.Split(Path.GetInvalidFileNameChars()));
+            tracePath = Path.Combine(TraceDirectory, $"{fileName}.zip");
         }
 
-        [SetUp]
-        public async Task StartTest()
+        await Context.Tracing.StopAsync(new() { Path = tracePath });
+
+        if (tracePath is not null)
         {
-            BrowserNewContextOptions contextOptions = new()
-            {
-                BaseURL = "https://demoqa.com",
-                ViewportSize = new ViewportSize() { Width = 1920, Height = 1080 },
-                ScreenSize = new ScreenSize() { Width = 1920, Height = 1080 }
-            };
-
-            var playwright = await Playwright.CreateAsync();
-            playwright.Selectors.SetTestIdAttribute("id");
-            var browser = await playwright.Chromium.LaunchAsync(new() { Headless = false, SlowMo=500 });
-            BasePage = await browser.NewPageAsync();
-
-            try
-            {
-                await BasePage.GotoAsync("https://demoqa.com", new() { WaitUntil = WaitUntilState.DOMContentLoaded });
-                Pages = new Pages.Pages(BasePage);
-            }
-            catch (Exception ex)
-            {
-
-                throw;
-            }
-
-        }
-
-        [OneTimeTearDown]
-        public async Task TearDown()
-        {
-            //Driver.Quit();
+            TestContext.AddTestAttachment(tracePath, "Playwright trace");
         }
     }
 }

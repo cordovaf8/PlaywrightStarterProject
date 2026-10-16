@@ -1,26 +1,18 @@
-﻿using FluentAssertions;
-using PlaywrightStarterProject.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using PlaywrightStarterProject.Pages.Samples.DemoQA;
 
-namespace PlaywrightStarterProject.Tests.Samples.DemoQA
+namespace PlaywrightStarterProject.Tests.Samples.DemoQA;
+
+public class FormsPageTests : BaseTest
 {
-    public class FormsPageTests : BaseTest
+    [Test]
+    public async Task CanNavigateToPracticeForm()
     {
-        [Test]
-        public async Task CanNavigateToPracticeForm()
-        {
-            await BasePage.GotoAsync(Pages.HomePage.Url);
+        await Pages.HomePage.GotoAsync();
 
-            await Pages.HomePage.FormsCard.ClickAsync();
-            await Pages.FormsPage.PracticeFormsLink.ClickAsync();
+        await Pages.HomePage.FormsCard.ClickAsync();
+        await Pages.FormsPage.PracticeFormLink.ClickAsync();
 
-            await BasePage.WaitForURLAsync(url => url.Contains(Pages.PracticeFormPage.Route));
-
-            BasePage.Url.Should().Contain(Pages.PracticeFormPage.Route);
-        }
+        await Expect(Page).ToHaveURLAsync(new Regex($"{PracticeFormPage.Route}$"));
+        await Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Practice Form" })).ToBeVisibleAsync();
     }
 }
